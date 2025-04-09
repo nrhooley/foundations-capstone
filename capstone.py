@@ -3,105 +3,6 @@ import bcrypt
 from datetime import datetime, date
 import csv
 
-# ************EXPORT CSV FILE**********************************
-def export_multiple_to_csv(db_name, filename):
-    connection = sqlite3.connect(db_name)
-    cursor = connection.cursor()
-
-    with open(filename, 'w', newline= '') as csv_file:
-        writer = csv.writer(csv_file)
-
-        cursor.execute("SELECT user_id, first_name, last_name, email FROM Users")
-        rows = cursor.fetchall()
-        writer.writerow(["User ID", "First Name", "Last Name", "Email"])
-        writer.writerows(rows)
-        writer.writerow([])
-
-        cursor.execute("SELECT assessment_id, name, competency_id FROM Assessments")
-        rows = cursor.fetchall()
-        writer.writerow(["Assessment ID", "Assessment Name", "Competency ID associated with this assessment"])
-        writer.writerows(rows)
-
-    connection.close()
-    print(f"Exported to {filename} successfully!")
-
-export_multiple_to_csv("competency_tracker_database.db", "exported_data.csv")
-
-
-# *****************CREATE CSV FILE FOR CSV IMPORT********************
-def create_assessment_results_csv():
-    headers = ['user_id', 'assessment_id', 'score', 'date_taken', 'manager_id']
-
-    data = [5, 11, 4, '1999-05-12', 1]
-    
-    with open('assessment_results.csv', 'w', newline='') as csv_file:
-        writer = csv.writer(csv_file)
-        
-        writer.writerow(headers)
-        writer.writerow(data)
-
-    print("CSV file 'assessment_results.csv' created successfully.")
-
-create_assessment_results_csv()
-
-
-# *************CSV IMPORT****************************************
-def import_assessment_results():
-    filename = 'assessment_results.csv'
-    db_name = "competency_tracker_database.db"
-
-    try:
-        connection = sqlite3.connect(db_name)
-        cursor = connection.cursor()
-
-        with open(filename, 'r', newline='') as csv_file:
-            reader = csv.DictReader(csv_file)
-
-            required_columns = ['user_id', 'assessment_id', 'score', 'date_taken', 'manager_id']
-            if not all(column in reader.fieldnames for column in required_columns):
-                print("CSV file is missing one or more required columns: 'user_id', 'assessment_id', 'score', 'date_taken', 'manager_id'")
-                return
-
-            for row in reader:
-                user_id = int(row['user_id'])
-                assessment_id = row['assessment_id']
-                score = int(row['score'])
-                date_taken = row['date_taken']
-                manager_id = int(row['manager_id'])
-
-                cursor.execute("""
-                    SELECT result_id FROM AssessmentResults
-                    WHERE user_id = ? AND assessment_id = ?
-                """, (user_id, assessment_id))
-                existing = cursor.fetchone()
-
-                if existing:
-                    cursor.execute("""
-                        UPDATE AssessmentResults
-                        SET score = ?, date_taken = ?, manager_id = ?
-                        WHERE user_id = ? AND assessment_id = ?
-                    """, (score, date_taken, manager_id, user_id, assessment_id))
-                else:
-                    cursor.execute("""
-                        INSERT INTO AssessmentResults (user_id, assessment_id, score, date_taken, manager_id)
-                        VALUES (?, ?, ?, ?, ?)
-                    """, (user_id, assessment_id, score, date_taken, manager_id))
-
-        connection.commit()
-        print(f"CSV data successfully imported into {db_name}!")
-
-    except sqlite3.Error as e:
-        print(f"Database error: {e}")
-    except FileNotFoundError as e:
-        print(f"File error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-    finally:
-        if 'connection' in locals():
-            connection.close()
-
-import_assessment_results()
-
 
 # *****************CREATE DATABASE******************************
 def create_schema(cursor):
@@ -262,6 +163,7 @@ Press [7] to edit a user's information, a competency, an assessment, or an asses
 Press [8] to delete an assessment result
 Press [9] to view a User Competency Summary
 Press [10] to view Competency Results for all Users
+Press [11] to Export or Import a CSV file
 Press [L] to logout\n
 """)
         if person == "1":
@@ -846,6 +748,121 @@ Press [5] to exit
         else:
             print("\nInvalid selection. Please enter a valid option.\n")
 
+
+# ************EXPORT USERS CSV FILE**********************************
+def export_users_to_csv(db_name, filename):
+    connection = sqlite3.connect(db_name)
+    cursor = connection.cursor()
+
+    with open(filename, 'w', newline= '') as csv_file:
+        writer = csv.writer(csv_file)
+
+        cursor.execute("SELECT user_id, first_name, last_name, email FROM Users")
+        rows = cursor.fetchall()
+        writer.writerow(["User ID", "First Name", "Last Name", "Email"])
+        writer.writerows(rows)
+        writer.writerow([])
+
+    connection.close()
+    print(f"Exported to {filename} successfully!")
+
+export_users_to_csv("competency_tracker_database.db", "exported_user_data.csv")
+
+
+# ************EXPORT ASSESSMENTS CSV FILE**********************************
+def export_assessments_to_csv(db_name, filename):
+    connection = sqlite3.connect(db_name)
+    cursor = connection.cursor()
+
+    with open(filename, 'w', newline= '') as csv_file:
+        writer = csv.writer(csv_file)
+
+        cursor.execute("SELECT assessment_id, name, competency_id FROM Assessments")
+        rows = cursor.fetchall()
+        writer.writerow(["Assessment ID", "Assessment Name", "Competency ID associated with this assessment"])
+        writer.writerows(rows)
+
+    connection.close()
+    print(f"Exported to {filename} successfully!")
+
+export_assessments_to_csv("competency_tracker_database.db", "exported_assessment_data.csv")
+
+
+# *****************CREATE CSV FILE FOR CSV IMPORT********************
+def create_assessment_results_csv():
+    headers = ['user_id', 'assessment_id', 'score', 'date_taken', 'manager_id']
+
+    data = [5, 11, 4, '1999-05-12', 1]
+    data_2 =[5, 8, 3, '1999-05-12', 1]
+    
+    with open('assessment_results.csv', 'w', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+        
+        writer.writerow(headers)
+        writer.writerow(data)
+        writer.writerow(data_2)
+
+    print("CSV file 'assessment_results.csv' created successfully.")
+
+create_assessment_results_csv()
+
+
+# *************CSV IMPORT****************************************
+def import_assessment_results():
+    filename = 'assessment_results.csv'
+    db_name = "competency_tracker_database.db"
+
+    try:
+        connection = sqlite3.connect(db_name)
+        cursor = connection.cursor()
+
+        with open(filename, 'r', newline='') as csv_file:
+            reader = csv.DictReader(csv_file)
+
+            required_columns = ['user_id', 'assessment_id', 'score', 'date_taken', 'manager_id']
+            if not all(column in reader.fieldnames for column in required_columns):
+                print("CSV file is missing one or more required columns: 'user_id', 'assessment_id', 'score', 'date_taken', 'manager_id'")
+                return
+
+            for row in reader:
+                user_id = int(row['user_id'])
+                assessment_id = row['assessment_id']
+                score = int(row['score'])
+                date_taken = row['date_taken']
+                manager_id = int(row['manager_id'])
+
+                cursor.execute("""
+                    SELECT result_id FROM AssessmentResults
+                    WHERE user_id = ? AND assessment_id = ?
+                """, (user_id, assessment_id))
+                existing = cursor.fetchone()
+
+                if existing:
+                    cursor.execute("""
+                        UPDATE AssessmentResults
+                        SET score = ?, date_taken = ?, manager_id = ?
+                        WHERE user_id = ? AND assessment_id = ?
+                    """, (score, date_taken, manager_id, user_id, assessment_id))
+                else:
+                    cursor.execute("""
+                        INSERT INTO AssessmentResults (user_id, assessment_id, score, date_taken, manager_id)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (user_id, assessment_id, score, date_taken, manager_id))
+
+        connection.commit()
+        print(f"CSV data successfully imported into {db_name}!")
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+    except FileNotFoundError as e:
+        print(f"File error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+    finally:
+        if 'connection' in locals():
+            connection.close()
+
+import_assessment_results()
 
 
 
