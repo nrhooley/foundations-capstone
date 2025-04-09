@@ -66,15 +66,15 @@ def manager_login():
 
 
 
-# ***************LOGOUT FUNCTION***************************
-def logout():
-    confirm = input("\nPress [L] again to be logged out and return to the main menu:\n").lower()
-    if confirm == "l":
-        print("You have been logged out")
-        return None
-    else:
-        print("\n Invalid entry. Please enter 'L' to logout.\n")
-        logout()
+# # ***************LOGOUT FUNCTION***************************
+# def logout():
+#     # confirm = input("\nPress [L] again to be logged out and return to the main menu:\n").lower()
+#     if confirm == "l":
+#         print("You have been logged out")
+#         return None
+#     else:
+#         print("\n Invalid entry. Please enter 'L' to logout.\n")
+#         logout()
 
 
 # *******************USER FUNCTION**************************
@@ -135,14 +135,14 @@ Press [L] to logout
             print("Password updated successfully.")
         
         elif person.lower() == "l":
-            logout()
-            break
+            print("\nYou have been logged out")
+            return None
         else:
             print("\n Invalid entry. Please enter 1, 2, 3, 4, 5, 6 or L for logout.\n")
             return
 
 
-# Need to make sure a user cannot login as a manager probably using the user_type from the Users table.
+
 # ******************MANAGER FUNCTION************************
 def the_manager():
     manager_id = manager_login()
@@ -338,10 +338,26 @@ Press [L] to logout\n
             for row in rows:
                 full_name = f"{row[0]} {row[1]}"
                 print(f"{full_name:<30} {row[2]:<20} {row[3]:<50} {row[4]:<15}")
+
+        elif person == "11":
+            csv_files = input("""
+        \nWhich would you like to do?\n
+        Press [1] to Export a Users CSV File
+        Press [2] to Export an Assessments CSV File
+        Press [3] to Import an Assessments Results CSV File
+        """)
+            if csv_files == "1":
+                export_users_to_csv("competency_tracker_database.db", "exported_user_data.csv")
+
+            elif csv_files == "2":
+                export_assessments_to_csv("competency_tracker_database.db", "exported_assessment_data.csv")
+
+            elif csv_files == "3":
+                import_assessment_results()
         
         elif person.lower() == "l":
-            logout()
-            break
+                print("\nYou have been logged out")
+                return None
         else:
             print("\n Invalid entry. Please enter 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 or L for logout.\n")
             return
@@ -766,8 +782,6 @@ def export_users_to_csv(db_name, filename):
     connection.close()
     print(f"Exported to {filename} successfully!")
 
-export_users_to_csv("competency_tracker_database.db", "exported_user_data.csv")
-
 
 # ************EXPORT ASSESSMENTS CSV FILE**********************************
 def export_assessments_to_csv(db_name, filename):
@@ -784,8 +798,6 @@ def export_assessments_to_csv(db_name, filename):
 
     connection.close()
     print(f"Exported to {filename} successfully!")
-
-export_assessments_to_csv("competency_tracker_database.db", "exported_assessment_data.csv")
 
 
 # *****************CREATE CSV FILE FOR CSV IMPORT********************
@@ -861,8 +873,6 @@ def import_assessment_results():
     finally:
         if 'connection' in locals():
             connection.close()
-
-import_assessment_results()
 
 
 
