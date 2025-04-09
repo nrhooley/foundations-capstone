@@ -1,0 +1,25 @@
+User ID,First Name,Last Name,Email
+1,Albus,Dumbledore,albus.dumbledore@hogwarts.com
+2,Minerva,McGonagall,minerva.mcgonagall@hogwarts.com
+3,Harry,Potter,harry.potter@hogwarts.com
+4,Ron,Weasley,ron.weasley@hogwarts.com
+5,Hermione,Granger,hermione.granger@hogwarts.com
+6,Dracon,Malfony,dracon.malfony@hogwarts.com
+
+Assessment ID,Assessment Name,Competency ID associated with this assessment
+1,Understanding and Using Python Data Types,1
+2,Declaring and Managing Variables in Code,2
+3,Creating and Calling Functions Effectively,14
+4,Applying Boolean Logic in Programming,4
+5,Controlling Program Flow with Conditionals,5
+6,Mastering For and While Loops,6
+7,Utilizing Core Data Structures in Programming,7
+8,Working with Lists and List Operations,8
+9,Implementing Dictionaries for Data Management,9
+10,Reading from and Writing to Files in Python,10
+11,Catching and Managing Errors Gracefully,11
+12,Writing Tests and Ensuring Code Quality,12
+13,Designing Programs with OOP Principles,13
+14,Solving Problems Recursively,14
+15,Interacting with Databases Using SQL and Python,15
+16,Understanding and Applying the Numbers Systems,181

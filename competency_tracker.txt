@@ -1,0 +1,95 @@
+
+
+CREATE TABLE IF NOT EXISTS Users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name TEXT NOT NULL,
+    last_name TEXT,
+    phone TEXT,
+    email UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    active INTEGER DEFAULT 1,
+    date_created TEXT,
+    hire_date TEXT,
+    user_type TEXT NOT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS AssessmentResults (
+    result_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    assessment_id TEXT NOT NULL,
+    score INTEGER,
+    date_taken TEXT,
+    manager_id INTEGER NOT NULL,
+
+    FOREIGN KEY (user_id)
+        REFERENCES Users(user_id),
+    FOREIGN KEY (assessment_id)
+        REFERENCES Assessments(assessment_id),
+    FOREIGN KEY (manager_id)
+        REFERENCES Users(user_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Assesments (
+    assessment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name UNIQUE,
+    date_created TEXT,
+    competency_id INTEGER NOT NULL,
+
+    FOREIGN KEY (competency_id)
+        REFERENCES Competencies(competency_id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Competencies (
+    competency_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name UNIQUE NOT NULL,
+    date_created TEXT
+);
+
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Data Types", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Variables", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Functions", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Boolean Logic", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Conditionals", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Loops", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Data Structures", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Lists", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Dictionaries", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Working with Files", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Exception Handling", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Quality Assurance (QA)", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Object-Oriented Programming", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Recursion", DATE('now'));
+
+INSERT OR IGNORE INTO Competencies (name, date_created)
+VALUES ("Databases", DATE('now'));
