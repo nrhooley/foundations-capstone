@@ -390,18 +390,49 @@ Press [5] to exit\n
     
             first_name = input("First Name   :")
             last_name = input("Last Name    :")
-            phone = input("Phone        :")
+
+            while True:
+                phone = input("Phone (10 digits): ")
+                if phone.isdigit() and len(phone) == 10:
+                    break
+                else:
+                    print("Invalid phone number. Please enter exactly 10 digits.")
+
             email = input("Email        :")
             password = input("Password     :")
-            active = int(input("Active (enter '1') or Inactive (enter '0'): "))
+
+            while True:
+                try:
+                    active = int(input("Active (enter '1') or Inactive (enter '0'): "))
+                    if active in [0, 1]:
+                        break
+                    else:
+                        print("Please enter '1' for active or '0' for inactive.")
+                except ValueError:
+                    print("Please enter a valid number (1 or 0).")
+
             date_created = date.today()
-            hire_date = input("Hire Date (YYYY-MM-DD) : ")  
-            user_type = input("User Type (User or Manager) : ")
+
+            while True:
+                hire_date = input("Hire Date (YYYY-MM-DD): ")
+                try:
+                    datetime.strptime(hire_date, '%Y-%m-%d')
+                    break
+                except ValueError:
+                    print("Invalid date format. Please use YYYY-MM-DD.")
+
+            while True:
+                user_type = input("User Type (User or Manager): ").strip().capitalize()
+                if user_type in ["User", "Manager"]:
+                    break
+                else:
+                    print("Invalid user type. Please enter either 'User' or 'Manager'.")
+
 
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-                
-            create_person = "INSERT INTO Users (first_name, last_name, phone, email, password, active, date_created, hire_date, user_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-            cursor.execute(create_person, (first_name, last_name, phone, email, hashed_password, active, date_created, hire_date, user_type,))
+
+            create_person = "INSERT INTO Users (first_name, last_name, phone, email, password, active, date_created, hire_date, user_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"    
+            cursor.execute(create_person, (first_name, last_name, phone, email, hashed_password, active, date_created, hire_date, user_type))
             connection.commit()
             print("\n\nThe User Record has been created.\n")
         
@@ -444,14 +475,30 @@ Press [5] to exit\n
             \n4 for - Expert Competency - Can Effectively pass on this knowledge and can initiate optimizations
             \n(Press 'Enter' to begin)\n--------------------------------\n\n""")
 
-            user_id = input("User ID:                 ")
-            assessment_id = input("Assessment ID:           ")
-            score = input("Score (0-4):             ")
+            while True:
+                user_id = input("User ID:                 ")
+                result = cursor.execute(
+                    "SELECT COUNT(1) FROM Users WHERE user_id = ? AND LOWER(user_type) = 'user'",
+                    (user_id,)
+                ).fetchone()[0]
+                if result:
+                    break
+                else:
+                    print("Error: User ID is either invalid or not associated with a regular User. Please enter a valid User ID.")
+
+            while True:
+                assessment_id = input("Assessment ID:           ")
+                assessment_exists = cursor.execute("SELECT COUNT(1) FROM Assessments WHERE assessment_id = ?", (assessment_id,)).fetchone()[0]
+                if assessment_exists:
+                    break
+                else:
+                    print("Error: Assessment ID does not exist. Please enter a valid Assessment ID.")
 
             valid_scores = {'0', '1', '2', '3', '4'}
+            score = input("Score (0-4):             ")
             while score not in valid_scores:
                 print("Invalid score. Please enter a valid score between 0 and 4.")
-                score = input("Score:         ")
+                score = input("Score (0-4):             ")
 
             while True:
                 the_date_taken = input("Date taken (YYYY-MM-DD): ")
@@ -461,24 +508,24 @@ Press [5] to exit\n
                 except ValueError:
                     print("Invalid date format. Please enter the date in YYYY-MM-DD format.")
 
-            manager_id = input("Manager ID:              ")
+            while True:
+                manager_id = input("Manager ID:              ")
+                result = cursor.execute(
+                    "SELECT COUNT(1) FROM Users WHERE user_id = ? AND LOWER(user_type) = 'manager'",
+                    (manager_id,)
+                ).fetchone()[0]
+                if result:
+                    break
+                else:
+                    print("Error: Manager ID is either invalid or not associated with a Manager. Please enter a valid Manager ID.")
 
-            user_exists = cursor.execute("SELECT COUNT(1) FROM Users WHERE user_id = ?", (user_id,)).fetchone()[0]
-            assessment_exists = cursor.execute("SELECT COUNT(1) FROM Assessments WHERE assessment_id = ?", (assessment_id,)).fetchone()[0]
-            manager_exists = cursor.execute("SELECT COUNT(1) FROM Users WHERE user_id = ?", (manager_id,)).fetchone()[0]
-
-            if user_exists and assessment_exists and manager_exists:
-                create_assessment_results = "INSERT INTO AssessmentResults (user_id, assessment_id, score, date_taken, manager_id) VALUES (?, ?, ?, ?, ?)"
-                cursor.execute(create_assessment_results, (user_id, assessment_id, score, the_date_taken, manager_id,))
-                connection.commit()
-                print("The assessment results for the user have been added.")
-            else:
-                if not user_exists:
-                    print("Error: User ID does not exist.")
-                if not assessment_exists:
-                    print("Error: Assessment ID does not exist.")
-                if not manager_exists:
-                    print("Error: Manager ID does not exist.")
+            create_assessment_results = """
+                INSERT INTO AssessmentResults (user_id, assessment_id, score, date_taken, manager_id)
+                VALUES (?, ?, ?, ?, ?)
+            """
+            cursor.execute(create_assessment_results, (user_id, assessment_id, score, the_date_taken, manager_id,))
+            connection.commit()
+            print("The assessment results for the user have been added.")
         
         elif manager == "5":
             print("Exiting....")
@@ -532,10 +579,16 @@ Press [5] to exit
                     print("Last name updated successfully!")
                 
                 elif edit_user_menu == "3":
-                    new_phone = input("Please enter new phone number:")
-                    cursor.execute("UPDATE Users SET phone = ? WHERE user_id = ?", (new_phone, person_id,))
-                    connection.commit()
-                    print("Phone number updated successfully!")
+                    while True:
+                        new_phone = input("Please enter new phone number: ")
+                        if new_phone.isdigit() and len(new_phone) == 10:
+                            cursor.execute("UPDATE Users SET phone = ? WHERE user_id = ?", (new_phone, person_id,))
+                            connection.commit()
+                            print("Phone number updated successfully!")
+                            break
+                        else:
+                            print("Invalid phone number. Please enter exactly 10 digits (numbers only).")
+
 
                 elif edit_user_menu == "4":
                     new_email = input("Please enter new email:")
@@ -598,175 +651,198 @@ Press [5] to exit
                     print("Invalid selection. Please enter a valid option.")
 
         elif managers == "2":
-            competency_id = input("\nPlease enter the competency ID of the competency you'd like to edit:\n")
-
-            competency_data = cursor.execute("SELECT * FROM Competencies WHERE competency_id = ?", (competency_id,)).fetchone()
-            if not competency_data:
-                print("Error: Competency ID not found.")
-                return
             while True:
-                edit_competency_menu = input("""
-    \nWhich competency info would you like to edit?\n
-    Press [1] to edit name of competency
-    Press [2] to edit the date the competency was created
-    Press [3] to exit
-    """)
-                if edit_competency_menu == "1":
-                    new_name = input("Please enter new competency name:")
-                    cursor.execute("UPDATE Competencies SET name = ? WHERE competency_id = ?", (new_name, competency_id,))
-                    connection.commit()
-                    print("Competency name updated successfully!")
+                competency_id = input("\nPlease enter the competency ID of the competency you'd like to edit:\n")
 
-                elif edit_competency_menu == "2":
-                    while True:
-                        new_day_created = input("Please enter new date for when the competency was created (YYYY-MM-DD):")
-                        try:
-                            new_day_created = datetime.strptime(new_day_created, "%Y-%m-%d").date().isoformat()
-                            break
-                        except ValueError:
-                            print("\nInvalid date format. Please enter the date in YYYY-MM-DD format.\n")
-                    cursor.execute("UPDATE Competencies SET date_created = ? WHERE competency_id = ?", (new_day_created, competency_id,))
-                    connection.commit()
-                    print("Competency creation date updated successfully!")
+                competency_data = cursor.execute("SELECT * FROM Competencies WHERE competency_id = ?", (competency_id,)).fetchone()
+                
+                if not competency_data:
+                    print("Error: Competency ID not found. Please try again.")
+                    continue 
+                
+                while True:
+                    edit_competency_menu = input("""
+                    \nWhich competency info would you like to edit?\n
+                    Press [1] to edit name of competency
+                    Press [2] to edit the date the competency was created
+                    Press [3] to exit
+                    """)
 
-                elif edit_competency_menu == "3":
-                    print("Exiting edit competency menu......")
-                    break
+                    if edit_competency_menu == "1":
+                        new_name = input("Please enter new competency name:")
+                        cursor.execute("UPDATE Competencies SET name = ? WHERE competency_id = ?", (new_name, competency_id,))
+                        connection.commit()
+                        print("Competency name updated successfully!")
 
-                else:
-                    print("Invalid selection. Please enter a valid option.")
+                    elif edit_competency_menu == "2":
+                        while True:
+                            new_day_created = input("Please enter new date for when the competency was created (YYYY-MM-DD):")
+                            try:
+                                new_day_created = datetime.strptime(new_day_created, "%Y-%m-%d").date().isoformat()
+                                break
+                            except ValueError:
+                                print("\nInvalid date format. Please enter the date in YYYY-MM-DD format.\n")
+                        cursor.execute("UPDATE Competencies SET date_created = ? WHERE competency_id = ?", (new_day_created, competency_id,))
+                        connection.commit()
+                        print("Competency creation date updated successfully!")
+
+                    elif edit_competency_menu == "3":
+                        print("Exiting edit competency menu......")
+                        break
+
+                    else:
+                        print("Invalid selection. Please enter a valid option.")
+
         
         elif managers == "3":
-            assessment_id = input("\nPlease enter the assessment ID of the assessment you'd like to edit:\n")
-
-            assessment_data = cursor.execute("SELECT * FROM Assessments WHERE assessment_id = ?", (assessment_id,)).fetchone()
-            if not assessment_data:
-                print("Error: Asssessment ID not found.")
-                return
             while True:
-                edit_assessment_menu = input("""
-    \nWhich assessment info would you like to edit?\n
-    Press [1] to edit name of assessment
-    Press [2] to edit the date the assessment was created
-    Press [3] to edit the competency ID connected to the assessment
-    Press [4] to exit
-    """)
-                if edit_assessment_menu == "1":
-                    new_assessment_name = input("Please enter new assessment name:")
-                    cursor.execute("UPDATE Assessments SET name = ? WHERE assessment_id = ?", (new_assessment_name, assessment_id,))
-                    connection.commit()
-                    print("Assessment name updated successfully!")
+                assessment_id = input("\nPlease enter the assessment ID of the assessment you'd like to edit:\n")
+                assessment_data = cursor.execute("SELECT * FROM Assessments WHERE assessment_id = ?", (assessment_id,)).fetchone()
 
-                elif edit_assessment_menu == "2":
-                    while True:
-                        new_assessment_date_created = input("Please enter new date for when the assessment was created (YYYY-MM-DD):")
-                        try:
-                            new_assessment_date_created = datetime.strptime(new_assessment_date_created, "%Y-%m-%d").date().isoformat()
-                            break
-                        except ValueError:
-                            print("Invalid date format. Please enter the date in YYYY-MM-DD format.")
-                    cursor.execute("UPDATE Assessments SET date_created = ? WHERE assessment_id = ?", (new_assessment_date_created, assessment_id,))
-                    connection.commit()
-                    print("Assessment creation date updated successfully!")
+                if not assessment_data:
+                    print("Error: Assessment ID not found. Please try again.")
+                    continue
 
-                elif edit_assessment_menu == "3":
-                    competency_id_1 = input("Please enter a new competency ID to link with this assessment:")
-                    list_of_comp_ids = cursor.execute("SELECT competency_id FROM Competencies").fetchall()
-                    if (int(competency_id_1),) in list_of_comp_ids:
-                        cursor.execute("UPDATE Assessments SET competency_id = ? WHERE assessment_id = ?", (competency_id_1, assessment_id,))
+                while True:
+                    edit_assessment_menu = input("""
+        \nWhich assessment info would you like to edit?\n
+        Press [1] to edit name of assessment
+        Press [2] to edit the date the assessment was created
+        Press [3] to edit the competency ID connected to the assessment
+        Press [4] to exit
+        """)
+                    if edit_assessment_menu == "1":
+                        new_assessment_name = input("Please enter new assessment name:")
+                        cursor.execute("UPDATE Assessments SET name = ? WHERE assessment_id = ?", (new_assessment_name, assessment_id,))
                         connection.commit()
-                        print("Competency ID has been updated for this assessment.")
-                    
+                        print("Assessment name updated successfully!")
+
+                    elif edit_assessment_menu == "2":
+                        while True:
+                            new_assessment_date_created = input("Please enter new date for when the assessment was created (YYYY-MM-DD):")
+                            try:
+                                new_assessment_date_created = datetime.strptime(new_assessment_date_created, "%Y-%m-%d").date().isoformat()
+                                break
+                            except ValueError:
+                                print("Invalid date format. Please enter the date in YYYY-MM-DD format.")
+                        cursor.execute("UPDATE Assessments SET date_created = ? WHERE assessment_id = ?", (new_assessment_date_created, assessment_id,))
+                        connection.commit()
+                        print("Assessment creation date updated successfully!")
+
+                    elif edit_assessment_menu == "3":
+                        while True:
+                            competency_id_1 = input("Please enter a new competency ID to link with this assessment:")
+                            list_of_comp_ids = cursor.execute("SELECT competency_id FROM Competencies").fetchall()
+                            if (int(competency_id_1),) in list_of_comp_ids:
+                                cursor.execute("UPDATE Assessments SET competency_id = ? WHERE assessment_id = ?", (competency_id_1, assessment_id,))
+                                connection.commit()
+                                print("Competency ID has been updated for this assessment.")
+                                break
+                            else:
+                                print("Error: Competency ID not found. Please try again.")
+
+                    elif edit_assessment_menu == "4":
+                        print("Exiting edit an assessment menu......")
+                        break
+
                     else:
-                        print("Error: Competency ID not found.")
-                        return
+                        print("Invalid selection. Please enter a valid option.")
 
-                elif edit_assessment_menu == "4":
-                    print("Exiting edit an assessment menu......")
+                if edit_assessment_menu == "4":
                     break
-
-                else:
-                    print("Invalid selection. Please enter a valid option.")
         
         
         elif managers == "4":
-            result_id = input("\nPlease enter the result ID of the assessment result you'd like to edit:\n")
-
-            result_data = cursor.execute("SELECT * FROM AssessmentResults WHERE result_id = ?", (result_id,)).fetchone()
-            if not result_data:
-                print("Error: Assessment Result ID not found.")
-                return
             while True:
-                edit_result_menu = input("""
-    \nWhich assessment result info would you like to edit?\n
-    Press [1] to edit the user ID (must be a valid user ID)
-    Press [2] to edit the assessment ID (must be a valid assessment ID)
-    Press [3] to edit the assessment score (must be between 0 and 4)
-    Press [4] to edit the date the assessment was taken (YYYY-MM-DD)
-    Press [5] to edit the manager ID for this assessment result (must be a valid manager ID)
-    Press [6] to exit
-    """)
-                if edit_result_menu == "1":
-                    person_id_1 = input("\nPlease enter a new User ID for this assessment result (must be a valid user ID):")
-                    list_of_person_ids = cursor.execute("SELECT user_id FROM AssessmentResults").fetchall()
-                    if (int(person_id_1),) in list_of_person_ids:
-                        cursor.execute("UPDATE AssessmentResults SET user_id = ? WHERE result_id = ?", (person_id_1, result_id,))
-                        connection.commit()
-                        print("\nUser ID has been updated.\n")
-                    else:
-                        print("\nError: User ID not found.\n")
-                        return
-                elif edit_result_menu == "2":
-                    assessment_id_1 = input("\nPlease enter a new Assessment ID for this assessment result (must be a valid Assessment ID):\n")
-                    list_of_assessment_ids = cursor.execute("SELECT assessment_id FROM Assessments").fetchall()
-                    if (int(assessment_id_1),) in list_of_assessment_ids:
-                        cursor.execute("UPDATE AssessmentResults SET assessment_id = ? WHERE result_id = ?", (assessment_id_1, result_id,))
-                        connection.commit()
-                        print("\nAssessment ID has been updated.\n")
-                    else:
-                        print("\nError: Assessment ID not found.\n")
-                        return
-                                    
-                elif edit_result_menu == "3":
-                    while True:
-                        assessment_score = input("\nPlease enter a new score for this assessment result (must be between 0 and 4):")
-                        if assessment_score in ["0", "1", "2", "3", "4"]:
-                            cursor.execute("UPDATE AssessmentResults SET score = ? WHERE result_id = ?", (assessment_score, result_id,))
-                            connection.commit()
-                            print("\nScore has been updated.\n")
-                            break
-                        else:
-                            print("\nInvalid entry. Please enter a number between 0 and 4.\n")
+                result_id = input("\nPlease enter the result ID of the assessment result you'd like to edit: \n")
 
-                elif edit_result_menu == "4":
-                    while True:
-                        edit_assessment_date_created = input("Please enter new date for when the assessment was taken (YYYY-MM-DD):")
-                        try:
-                            edit_assessment_date_created = datetime.strptime(edit_assessment_date_created, "%Y-%m-%d").date().isoformat()
-                            break
-                        except ValueError:
-                            print("\nInvalid date format. Please enter the date in YYYY-MM-DD format.\n")
+                result_data = cursor.execute("SELECT * FROM AssessmentResults WHERE result_id = ?", (result_id,)).fetchone()
+                if not result_data:
+                    print("Error: Assessment Result ID not found.")
+                    continue
 
-                    cursor.execute("UPDATE AssessmentResults SET date_taken = ? WHERE result_id = ?", (edit_assessment_date_created, result_id,))
-                    connection.commit()
-                    print("\nAssessment date taken updated successfully!\n")
-                
-                elif edit_result_menu == "5":
-                    manager_id = input("\nPlease enter a new Manager ID for this assessment result (must be a valid Manager ID):")
-                    list_of_manager_ids = cursor.execute("SELECT user_id FROM Users")
-                    if(int(manager_id),) in list_of_manager_ids:
-                        cursor.execute("UPDATE AssessmentResults SET manager_id = ? WHERE result_id = ?", (manager_id, result_id,))
+                while True:
+                    edit_result_menu = input("""
+                \nWhich assessment result info would you like to edit?\n
+                Press [1] to edit the user ID (must be a valid user ID)
+                Press [2] to edit the assessment ID (must be a valid assessment ID)
+                Press [3] to edit the assessment score (must be between 0 and 4)
+                Press [4] to edit the date the assessment was taken (YYYY-MM-DD)
+                Press [5] to edit the manager ID for this assessment result (must be a valid manager ID)
+                Press [6] to exit
+                """)
+
+                    if edit_result_menu == "1":
+                        while True:
+                            person_id_1 = input("\nPlease enter a new User ID for this assessment result (must be a valid user ID): ")
+                            list_of_person_ids = cursor.execute("SELECT user_id FROM Users WHERE user_type = 'user'").fetchall()
+                            if (int(person_id_1),) in list_of_person_ids:
+                                cursor.execute("UPDATE AssessmentResults SET user_id = ? WHERE result_id = ?", (person_id_1, result_id,))
+                                connection.commit()
+                                print("\nUser ID has been updated.\n")
+                                break
+                            else:
+                                print("\nError: User ID not found.\n")
+
+                    elif edit_result_menu == "2":
+                        while True:
+                            assessment_id_1 = input("\nPlease enter a new Assessment ID for this assessment result (must be a valid Assessment ID):\n")
+                            list_of_assessment_ids = cursor.execute("SELECT assessment_id FROM Assessments").fetchall()
+                            if (int(assessment_id_1),) in list_of_assessment_ids:
+                                cursor.execute("UPDATE AssessmentResults SET assessment_id = ? WHERE result_id = ?", (assessment_id_1, result_id,))
+                                connection.commit()
+                                print("\nAssessment ID has been updated.\n")
+                                break
+                            else:
+                                print("\nError: Assessment ID not found.\n")
+
+                    elif edit_result_menu == "3":
+                        while True:
+                            assessment_score = input("\nPlease enter a new score for this assessment result (must be between 0 and 4):")
+                            if assessment_score in ["0", "1", "2", "3", "4"]:
+                                cursor.execute("UPDATE AssessmentResults SET score = ? WHERE result_id = ?", (assessment_score, result_id,))
+                                connection.commit()
+                                print("\nScore has been updated.\n")
+                                break
+                            else:
+                                print("\nInvalid entry. Please enter a number between 0 and 4.\n")
+
+                    elif edit_result_menu == "4":
+                        while True:
+                            edit_assessment_date_created = input("Please enter new date for when the assessment was taken (YYYY-MM-DD):")
+                            try:
+                                edit_assessment_date_created = datetime.strptime(edit_assessment_date_created, "%Y-%m-%d").date().isoformat()
+                                break
+                            except ValueError:
+                                print("\nInvalid date format. Please enter the date in YYYY-MM-DD format.\n")
+
+                        cursor.execute("UPDATE AssessmentResults SET date_taken = ? WHERE result_id = ?", (edit_assessment_date_created, result_id,))
                         connection.commit()
-                        print("\nManager ID has been updated.\n")
+                        print("\nAssessment date taken updated successfully!\n")
+
+                    elif edit_result_menu == "5":
+                        while True:
+                            manager_id = input("\nPlease enter a new Manager ID for this assessment result (must be a valid Manager ID):")
+                            list_of_manager_ids = cursor.execute("SELECT user_id FROM Users WHERE user_type LIKE 'manager'").fetchall()
+                            print("List of manager ids",list_of_manager_ids)
+                            if (int(manager_id),) in list_of_manager_ids:
+                                cursor.execute("UPDATE AssessmentResults SET manager_id = ? WHERE result_id = ?", (manager_id, result_id,))
+                                connection.commit()
+                                print("\nManager ID has been updated.\n")
+                                break
+                            else:
+                                print("\nError: Manager ID not found.\n")
+
+                    elif edit_result_menu == "6":
+                        print("\nExiting edit assessment result menu....\n")
+                        break
+
                     else:
-                        print("\nError: User ID not found.\n")
-                        return
-                
-                elif edit_result_menu == "6":
-                    print("\nExiting edit assessment result menu....\n")
+                        print("\nInvalid selection. Please enter a valid option.\n")
+
+                if edit_result_menu == "6":
                     break
-                else:
-                    print("\nInvalid selection. Please enter a valid option.\n")
+
         
         elif managers == "5":
             print("\nExiting edit menu....\n")
