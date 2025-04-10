@@ -117,10 +117,17 @@ Press [L] to logout
             print("Last name successfully updated.")
         
         elif person == "4":
-            new_phone = input("\nPlease enter a new phone number:\n")
+            while True:
+                new_phone = input("\nPlease enter a new 10-digit phone number (numbers only):\n")
+                if new_phone.isdigit() and len(new_phone) == 10:
+                    break
+                else:
+                    print("Invalid phone number. Please enter exactly 10 digits.")
+
             cursor.execute("UPDATE Users SET phone = ? WHERE user_id = ?", (new_phone, user_id,))
             connection.commit()
             print("Phone number updated successfully.")
+
         
         elif person == "5":
             new_email = input("\nPlease enter a new email address:\n")
@@ -130,7 +137,8 @@ Press [L] to logout
         
         elif person == "6":
             new_password = input("\nPlease enter a new password:\n")
-            cursor.execute("UPDATE Users SET password = ? WHERE user_id = ?", (new_password, user_id,))
+            hashed_password = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt())
+            cursor.execute("UPDATE Users SET password = ? WHERE user_id = ?", (hashed_password, user_id,))
             connection.commit()
             print("Password updated successfully.")
         
@@ -195,7 +203,7 @@ Press [L] to logout\n
                 print("No user found with that name.")
         
         elif person == "3":
-            assessment_id = input("Enter the competency ID:")
+            assessment_id = input("Enter the competency ID: ")
             rows_3 = cursor.execute("SELECT user_id, score From AssessmentResults WHERE assessment_id = ?", (assessment_id,)).fetchall()
             if rows_3:
                 print("User ID   Cometency Level")
@@ -203,10 +211,10 @@ Press [L] to logout\n
                 for row_3 in rows_3:
                     print(f"{row_3[0]:<8} {row_3[1]}")
             else:
-                print("Invalid competency ID.")
+                print("Invalid ID or No results for the competency ID.")
         
         elif person == "4":
-            user_id = input("Enter the user ID to view a competency level report for a person:")
+            user_id = input("Enter the user ID to view a competency level report for a person: ")
             rows_4 = cursor.execute("SELECT assessment_id, score FROM AssessmentResults WHERE user_id = ?", (user_id,)).fetchall()
             if rows_4:
                 print("Assessment ID   Score")
@@ -217,7 +225,7 @@ Press [L] to logout\n
                 print("Incorrect User ID.")
         
         elif person == "5":
-            person_id = input("Enter the user ID to view a list of assessents for a given user:")
+            person_id = input("Enter the user ID to view a list of assessents for a given user: ")
             rows_5 = cursor.execute("SELECT assessment_id FROM AssessmentResults WHERE user_id = ?", (person_id,)).fetchall()
             if rows_5:
                 print("\nAssessments List:")
@@ -274,7 +282,7 @@ Press [L] to logout\n
             if average_score is not None:
                 print(f"\n**Average Competency Score for ALL Competencies taken: {average_score:.2f}")
             else:
-                print("\nNo assessment results found for this user.")
+                print("\nInvalid User ID or No assessment results found for this user.")
 
         elif person == "10":
             the_assessment_id = input("\nEnter the Assessment ID to view a Competency Results Summary for all Users:\n")
@@ -290,7 +298,6 @@ Press [L] to logout\n
                 print(f"\nCompetency: {competency_info[0]}")
             else:
                 print(f"\nNo such competency found for this Assessment ID.")
-                exit()
 
             avg_score = cursor.execute("""
                 SELECT AVG(
@@ -305,7 +312,11 @@ Press [L] to logout\n
                 WHERE a.assessment_id = ? AND u.active = 1
             """, (the_assessment_id,)).fetchone()[0]
 
-            print(f"\nAverage Competency Score: {avg_score:.2f}")
+            if avg_score is not None:
+                print(f"\nAverage Competency Score: {avg_score:.2f}")
+            else:
+                print("\nAverage Competency Score: N/A (No scores found)")
+
 
             rows = cursor.execute("""
                 SELECT u.first_name, u.last_name, 
