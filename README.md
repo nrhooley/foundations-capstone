@@ -2,7 +2,12 @@
 Foundations Capstone Project
 
 This is a competency tracker application. When beginning the application, it will prompt you to login as a User or a Manager.
--If login info is needed for you to be able to test and grade my capstone please let me know so that I can provide that information for you.
+-For you to be able to grade my capstone: Here is a manager login info:
+Email: albus.dumbledore@hogwarts.com
+Password: headmaster
+-Here is a user login info:
+Email: harry.potter@hogwarts.com
+Password: chosenone
 
 After logging in, a User is able to:
 -View their own competency and assessment data
