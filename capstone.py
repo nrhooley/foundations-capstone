@@ -130,10 +130,16 @@ Press [L] to logout
 
         
         elif person == "5":
-            new_email = input("\nPlease enter a new email address:\n")
-            cursor.execute("UPDATE Users SET email = ? WHERE user_id = ?", (new_email, user_id,))
-            connection.commit()
-            print("Email updated successfully.")
+            while True:
+                new_email = input("\nPlease enter a new email address:\n")
+                try:
+                    cursor.execute("UPDATE Users SET email = ? WHERE user_id = ?", (new_email, user_id,))
+                    connection.commit()
+                    print("Email updated successfully.")
+                    break
+                except sqlite3.IntegrityError:
+                    print("Error: That email address is already in use. Please try another one.")
+
         
         elif person == "6":
             new_password = input("\nPlease enter a new password:\n")
@@ -387,7 +393,7 @@ Press [5] to exit\n
 """)
         if manager == "1":
             input("\nPlease fill out the form below to create a new user:\n(Press 'Enter' to begin)\n-----------------------------------------\n\n")
-    
+
             first_name = input("First Name   :")
             last_name = input("Last Name    :")
 
@@ -398,71 +404,94 @@ Press [5] to exit\n
                 else:
                     print("Invalid phone number. Please enter exactly 10 digits.")
 
-            email = input("Email        :")
-            password = input("Password     :")
-
             while True:
-                try:
-                    active = int(input("Active (enter '1') or Inactive (enter '0'): "))
-                    if active in [0, 1]:
+                email = input("Email        :")
+
+                password = input("Password     :")
+
+                while True:
+                    try:
+                        active = int(input("Active (enter '1') or Inactive (enter '0'): "))
+                        if active in [0, 1]:
+                            break
+                        else:
+                            print("Please enter '1' for active or '0' for inactive.")
+                    except ValueError:
+                        print("Please enter a valid number (1 or 0).")
+
+                date_created = date.today()
+
+                while True:
+                    hire_date = input("Hire Date (YYYY-MM-DD): ")
+                    try:
+                        datetime.strptime(hire_date, '%Y-%m-%d')
+                        break
+                    except ValueError:
+                        print("Invalid date format. Please use YYYY-MM-DD.")
+
+                while True:
+                    user_type = input("User Type (User or Manager): ").strip().capitalize()
+                    if user_type in ["User", "Manager"]:
                         break
                     else:
-                        print("Please enter '1' for active or '0' for inactive.")
-                except ValueError:
-                    print("Please enter a valid number (1 or 0).")
+                        print("Invalid user type. Please enter either 'User' or 'Manager'.")
 
-            date_created = date.today()
+                hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-            while True:
-                hire_date = input("Hire Date (YYYY-MM-DD): ")
+                create_person = """
+                    INSERT INTO Users (first_name, last_name, phone, email, password, active, date_created, hire_date, user_type)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """
+
                 try:
-                    datetime.strptime(hire_date, '%Y-%m-%d')
+                    cursor.execute(create_person, (
+                        first_name, last_name, phone, email, hashed_password, active, date_created, hire_date, user_type
+                    ))
+                    connection.commit()
+                    print("\n\nThe User Record has been created.\n")
                     break
-                except ValueError:
-                    print("Invalid date format. Please use YYYY-MM-DD.")
+                except sqlite3.IntegrityError:
+                    print("\nError: That email address is already in use. Please try a different one.\n")
 
-            while True:
-                user_type = input("User Type (User or Manager): ").strip().capitalize()
-                if user_type in ["User", "Manager"]:
-                    break
-                else:
-                    print("Invalid user type. Please enter either 'User' or 'Manager'.")
-
-
-            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-
-            create_person = "INSERT INTO Users (first_name, last_name, phone, email, password, active, date_created, hire_date, user_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"    
-            cursor.execute(create_person, (first_name, last_name, phone, email, hashed_password, active, date_created, hire_date, user_type))
-            connection.commit()
-            print("\n\nThe User Record has been created.\n")
         
         elif manager == "2":
             input("\nPlease fill out the form below to create a new competency:\n(Press 'Enter' to begin)\n--------------------------------\n\n")
+            
+            while True:
+                name = input("Name of competency: ")
+                day_created = date.today().isoformat()
 
-            name = input("Name of competency: ")
-            day_created = date.today().isoformat()
-
-            create_competency = "INSERT INTO Competencies (name, date_created) VALUES (?, ?)"
-            cursor.execute(create_competency, (name, day_created,))
-            connection.commit()
-            print("\n\nThe competency has been created.\n")
+                try:
+                    create_competency = "INSERT INTO Competencies (name, date_created) VALUES (?, ?)"
+                    cursor.execute(create_competency, (name, day_created,))
+                    connection.commit()
+                    print("\n\nThe competency has been created.\n")
+                    break
+                except sqlite3.IntegrityError:
+                    print("Error: A competency with that name already exists Please enter a different name.")
         
         elif manager == "3":
             input("\nPlease fill out the form below to add a new assessment to a competency:\n(Press 'Enter' to begin)\n--------------------------------\n\n")
 
-            name_1 = input("Name of assessment:             ")
-            the_day_created = date.today().isoformat()
-            competency_id = input("Enter the competency ID number: ")
+            while True:
+                name_1 = input("Name of assessment:             ")
+                the_day_created = date.today().isoformat()
+                competency_id = input("Enter the competency ID number: ")
 
-            competency_exists = cursor.execute("SELECT COUNT(1) FROM Competencies WHERE competency_id = ?", (competency_id,)).fetchone()[0]
+                competency_exists = cursor.execute("SELECT COUNT(1) FROM Competencies WHERE competency_id = ?", (competency_id,)).fetchone()[0]
 
-            if competency_exists:
-                create_assessment = "INSERT INTO Assessments (name, date_created, competency_id) VALUES (?, ?, ?)"
-                cursor.execute(create_assessment, (name_1, the_day_created, competency_id,))
-                connection.commit()
-                print("The assessment has been added to the competency.\n")
-            else:
-                print("Error: The provided competency ID does not exist. Please enter a valid competency ID.")
+                if competency_exists:
+                    try:
+                        create_assessment = "INSERT INTO Assessments (name, date_created, competency_id) VALUES (?, ?, ?)"
+                        cursor.execute(create_assessment, (name_1, the_day_created, competency_id,))
+                        connection.commit()
+                        print("The assessment has been added to the competency.\n")
+                        break
+                    except sqlite3.IntegrityError:
+                        print("Error: An assessment with that name already exists. Please enter a different name.\n")
+                else:
+                    print("Error: The provided competency ID does not exist. Please enter a valid competency ID.\n")
+
         
         elif manager == "4":
             input("""
@@ -555,17 +584,17 @@ Press [5] to exit
                 return
             while True:
                 edit_user_menu = input("""
-    \nWhich personal info would you like to edit?\n
-    Press [1] to edit first name
-    Press [2] to edit last name
-    Press [3] to edit phone number
-    Press [4] to edit email address
-    Press [5] to edit active status (0 or 1)
-    Press [6] to edit the date the person was created
-    Press [7] to edit the date the person was hired
-    Press [8] to edit the person type (Manager or User)
-    Press [9] to exit
-    """)
+                \nWhich personal info would you like to edit?\n
+                Press [1] to edit first name
+                Press [2] to edit last name
+                Press [3] to edit phone number
+                Press [4] to edit email address
+                Press [5] to edit active status (0 or 1)
+                Press [6] to edit the date the person was created
+                Press [7] to edit the date the person was hired
+                Press [8] to edit the person type (Manager or User)
+                Press [9] to exit
+                """)
                 if edit_user_menu == "1":
                     new_first_name = input("Please enter new first name:")
                     cursor.execute("UPDATE Users SET first_name = ? WHERE user_id = ?", (new_first_name, person_id,))
@@ -591,10 +620,17 @@ Press [5] to exit
 
 
                 elif edit_user_menu == "4":
-                    new_email = input("Please enter new email:")
-                    cursor.execute("UPDATE Users SET email = ? WHERE user_id = ?", (new_email, person_id,))
-                    connection.commit()
-                    print("Email address updated successfully!")
+                    while True:
+                        new_email = input("Please enter new email: ")
+
+                        try:
+                            cursor.execute("UPDATE Users SET email = ? WHERE user_id = ?", (new_email, person_id,))
+                            connection.commit()
+                            print("Email address updated successfully!")
+                            break
+                        except sqlite3.IntegrityError:
+                            print("Error: That email address is already in use. Please enter a different one.")
+
                 
                 elif edit_user_menu == "5":
                     while True:
@@ -669,10 +705,15 @@ Press [5] to exit
                     """)
 
                     if edit_competency_menu == "1":
-                        new_name = input("Please enter new competency name:")
-                        cursor.execute("UPDATE Competencies SET name = ? WHERE competency_id = ?", (new_name, competency_id,))
-                        connection.commit()
-                        print("Competency name updated successfully!")
+                        while True:
+                            new_name = input("Please enter new competency name:")
+                            try:
+                                cursor.execute("UPDATE Competencies SET name = ? WHERE competency_id = ?", (new_name, competency_id,))
+                                connection.commit()
+                                print("Competency name updated successfully!")
+                                break
+                            except sqlite3.IntegrityError:
+                                print("Error. That competency name already exists. Please enter a different competency name.")
 
                     elif edit_competency_menu == "2":
                         while True:
@@ -705,17 +746,22 @@ Press [5] to exit
 
                 while True:
                     edit_assessment_menu = input("""
-        \nWhich assessment info would you like to edit?\n
-        Press [1] to edit name of assessment
-        Press [2] to edit the date the assessment was created
-        Press [3] to edit the competency ID connected to the assessment
-        Press [4] to exit
-        """)
+                    \nWhich assessment info would you like to edit?\n
+                    Press [1] to edit name of assessment
+                    Press [2] to edit the date the assessment was created
+                    Press [3] to edit the competency ID connected to the assessment
+                    Press [4] to exit
+                    """)
                     if edit_assessment_menu == "1":
-                        new_assessment_name = input("Please enter new assessment name:")
-                        cursor.execute("UPDATE Assessments SET name = ? WHERE assessment_id = ?", (new_assessment_name, assessment_id,))
-                        connection.commit()
-                        print("Assessment name updated successfully!")
+                        while True:
+                            new_assessment_name = input("Please enter new assessment name: ")
+                            try:
+                                cursor.execute("UPDATE Assessments SET name = ? WHERE assessment_id = ?", (new_assessment_name, assessment_id,))
+                                connection.commit()
+                                print("Assessment name updated successfully!")
+                                break
+                            except sqlite3.IntegrityError:
+                                print("Error: An assessment with that name already exists. Please enter a different name.")
 
                     elif edit_assessment_menu == "2":
                         while True:
@@ -763,14 +809,14 @@ Press [5] to exit
 
                 while True:
                     edit_result_menu = input("""
-                \nWhich assessment result info would you like to edit?\n
-                Press [1] to edit the user ID (must be a valid user ID)
-                Press [2] to edit the assessment ID (must be a valid assessment ID)
-                Press [3] to edit the assessment score (must be between 0 and 4)
-                Press [4] to edit the date the assessment was taken (YYYY-MM-DD)
-                Press [5] to edit the manager ID for this assessment result (must be a valid manager ID)
-                Press [6] to exit
-                """)
+                    \nWhich assessment result info would you like to edit?\n
+                    Press [1] to edit the user ID (must be a valid user ID)
+                    Press [2] to edit the assessment ID (must be a valid assessment ID)
+                    Press [3] to edit the assessment score (must be between 0 and 4)
+                    Press [4] to edit the date the assessment was taken (YYYY-MM-DD)
+                    Press [5] to edit the manager ID for this assessment result (must be a valid manager ID)
+                    Press [6] to exit
+                    """)
 
                     if edit_result_menu == "1":
                         while True:
