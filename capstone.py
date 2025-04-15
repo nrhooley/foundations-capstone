@@ -733,6 +733,7 @@ Press [5] to exit
 
                     else:
                         print("Invalid selection. Please enter a valid option.")
+                break
 
         
         elif managers == "3":
